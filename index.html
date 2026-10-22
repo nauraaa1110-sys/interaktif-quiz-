@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Interaktif MTS DDI Kel Baru</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a, #020617);
+            background-attachment: fixed;
+        }
+        .font-heading {
+            font-family: 'Outfit', sans-serif;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-pop {
+            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .animate-pulse-slow {
+            animation: pulseSlow 3s infinite ease-in-out;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card-glow {
+            box-shadow: 0 0 30px -5px rgba(99, 102, 241, 0.15);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.92); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pulseSlow {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.03); opacity: 0.9; }
+        }
+        /* Custom Scrollbar */
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 8px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.8);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between p-3 sm:p-6 md:p-8 relative selection:bg-indigo-500 selection:text-white">
+
+    <!-- Ambient Glowing Orbs Background Effect -->
+    <div class="fixed top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+    <div class="fixed bottom-10 right-10 w-[350px] h-[350px] bg-purple-600/10 rounded-full blur-[100px] pointer-events-none -z-10"></div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 translate-y-[-120px] opacity-0 glass-card px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-indigo-500/30">
+        <div id="toast-badge" class="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-lg"></i>
+        </div>
+        <span id="toast-msg" class="text-xs sm:text-sm font-medium text-slate-100">Notifikasi</span>
+    </div>
+
+    <!-- Top Navigation / Header -->
+    <header class="max-w-4xl w-full mx-auto flex items-center justify-between pb-5 border-b border-slate-800/80">
+        <div class="flex items-center space-x-3.5">
+            <div class="relative group cursor-pointer" onclick="resetToWelcome()">
+                <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-40 group-hover:opacity-75 transition duration-300"></div>
+                <div class="relative p-3 bg-slate-900 text-indigo-400 rounded-2xl border border-slate-700/80 flex items-center justify-center">
+                    <i class="fa-solid fa-graduation-cap text-2xl"></i>
+                </div>
+            </div>
+            <div>
+                <h1 class="font-heading font-extrabold text-lg sm:text-2xl tracking-tight text-white flex items-center gap-2">
+                    MTS DDI Kel Baru
+                    <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hidden sm:inline-block">Smart Quiz</span>
+                </h1>
+                <p class="text-xs text-slate-400">Platform Kuis & Evaluasi Pembelajaran Interaktif</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Audio Toggle Button -->
+            <button id="sound-toggle-btn" onclick="toggleSound()" class="p-2.5 bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 rounded-xl transition-all border border-slate-700/70" title="Suara FX On/Off">
+                <i id="sound-icon" class="fa-solid fa-volume-high text-xs sm:text-sm"></i>
+            </button>
+            <!-- Admin Toggle Button -->
+            <button id="admin-toggle-btn" onclick="openAdminModal()" class="flex items-center gap-2 text-xs font-semibold px-3.5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 hover:text-indigo-200 rounded-xl transition-all border border-indigo-500/30 shadow-lg shadow-indigo-900/20">
+                <i class="fa-solid fa-user-gear"></i> <span class="hidden sm:inline">Admin Panel</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Display -->
+    <main class="max-w-4xl w-full mx-auto my-auto py-6">
+
+        <!-- WELCOME & REGISTRATION DASHBOARD CARD -->
+        <div id="welcome-card" class="glass-card glass-card-glow rounded-3xl p-6 sm:p-10 border border-slate-700/60 shadow-2xl text-center animate-fade-in relative overflow-hidden">
+            
+            <div class="inline-flex p-4 bg-gradient-to-br from-indigo-500/20 to-purple-500/10 text-indigo-400 rounded-2xl mb-5 border border-indigo-500/30 shadow-inner animate-pulse-slow">
+                <i class="fa-solid fa-laptop-code text-4xl"></i>
+            </div>
+            
+            <!-- Main Title Requested by User -->
+            <h2 class="font-heading text-2xl sm:text-4xl font-extrabold text-white mb-3 leading-snug tracking-tight">
+                Selamat Datang di Quiz Interaktif <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400">MTS DDI KEL BARU</span>
+            </h2>
+            
+            <p class="text-slate-300 text-xs sm:text-sm mb-8 max-w-lg mx-auto leading-relaxed">
+                Silakan isi data diri Anda untuk memulai sesi kuis. Urutan soal dan opsi pilihan jawaban akan diacak secara otomatis demi kejujuran ujian.
+            </p>
+
+            <form onsubmit="handleStartQuiz(event)" class="max-w-md mx-auto space-y-4 text-left mb-8">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-check text-indigo-400"></i> Nama Lengkap Peserta
+                    </label>
+                    <input type="text" id="participant-name" required placeholder="Contoh: Ahmad Rizky..." class="w-full px-4 py-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all placeholder:text-slate-500">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-chalkboard-user text-indigo-400"></i> Kelas / Rombel
+                    </label>
+                    <select id="participant-class" required class="w-full px-4 py-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all">
+                        <option value="">-- Pilih Kelas Anda --</option>
+                        <option value="7A">Kelas 7A</option>
+                        <option value="7B">Kelas 7B</option>
+                        <option value="8A">Kelas 8A</option>
+                        <option value="8B">Kelas 8B</option>
+                        <option value="9A">Kelas 9A</option>
+                        <option value="9B">Kelas 9B</option>
+                    </select>
+                </div>
+
+                <div class="pt-3">
+                    <button type="submit" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.01] active:scale-[0.98] flex items-center justify-center gap-2.5 text-sm sm:text-base tracking-wide">
+                        <i class="fa-solid fa-play"></i> Mulai Kerjakan Quiz
+                    </button>
+                </div>
+            </form>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto text-left">
+                <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-400 flex items-center gap-2.5">
+                    <i class="fa-solid fa-shuffle text-indigo-400 text-base shrink-0"></i>
+                    <span>Soal & Pilihan Diacak Otomatis</span>
+                </div>
+                <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-400 flex items-center gap-2.5">
+                    <i class="fa-solid fa-clock-rotate-left text-purple-400 text-base shrink-0"></i>
+                    <span>Sistem Timer Opsional</span>
+                </div>
+                <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-400 flex items-center gap-2.5">
+                    <i class="fa-solid fa-award text-emerald-400 text-base shrink-0"></i>
+                    <span>Pembahasan di Akhir Quiz</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUIZ ENGINE CARD -->
+        <div id="quiz-card" class="hidden glass-card glass-card-glow rounded-3xl p-6 sm:p-9 border border-slate-700/60 shadow-2xl animate-fade-in relative">
+            
+            <!-- Progress Bar & User Status Bar -->
+            <div class="mb-6 pb-4 border-b border-slate-800">
+                <div class="flex flex-wrap justify-between items-center text-xs sm:text-sm text-slate-300 font-medium gap-2 mb-3">
+                    <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/80">
+                        <i class="fa-solid fa-user text-indigo-400"></i>
+                        <span id="user-badge" class="font-semibold text-slate-100">Peserta: -</span>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <!-- Timer Badge -->
+                        <div id="timer-badge" class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-950/60 border border-indigo-500/40 text-indigo-300 rounded-xl font-mono text-xs font-bold">
+                            <i class="fa-regular fa-clock"></i>
+                            <span id="quiz-timer">00:00</span>
+                        </div>
+                        <!-- Question Counter -->
+                        <span id="question-count" class="text-indigo-400 font-extrabold font-heading px-3 py-1.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
+                            Soal 1 dari 5
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Animated Progress Bar -->
+                <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-800">
+                    <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-1.5 rounded-full transition-all duration-500 shadow-md shadow-indigo-500/50" style="width: 20%"></div>
+                </div>
+            </div>
+
+            <!-- Question Text -->
+            <div class="mb-6 min-h-[80px]">
+                <h3 id="question-text" class="font-heading text-lg sm:text-2xl font-bold text-white leading-relaxed">
+                    <!-- Question text injected dynamically -->
+                </h3>
+            </div>
+
+            <!-- Options Container -->
+            <div id="options-container" class="space-y-3.5 mb-8">
+                <!-- Options buttons injected dynamically -->
+            </div>
+
+            <!-- Quiz Navigation Footer -->
+            <div class="flex justify-between items-center pt-4 border-t border-slate-800">
+                <button onclick="confirmCancelQuiz()" class="text-xs text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-rose-500/10">
+                    <i class="fa-solid fa-arrow-left"></i> Keluar Sesi
+                </button>
+                <button id="next-btn" onclick="nextQuestion()" disabled class="px-7 py-3 bg-slate-800 text-slate-500 opacity-50 cursor-not-allowed text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center gap-2">
+                    <span>Lanjut</span> <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- FINAL RESULT DASHBOARD CARD -->
+        <div id="result-card" class="hidden glass-card glass-card-glow rounded-3xl p-6 sm:p-10 border border-slate-700/60 shadow-2xl animate-pop text-center">
+            
+            <div id="result-icon-container" class="w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-5 border shadow-2xl transition-transform hover:scale-110">
+                <i id="result-icon" class="text-5xl"></i>
+            </div>
+            
+            <h2 id="result-title" class="font-heading text-2xl sm:text-4xl font-extrabold text-white mb-1">Hasil Quiz Selesai</h2>
+            <p id="result-user-info" class="text-slate-400 text-xs sm:text-sm mb-6">Nama: - | Kelas: -</p>
+
+            <!-- Final Score Display Card -->
+            <div class="bg-gradient-to-b from-slate-900/90 to-slate-900/50 rounded-2xl p-6 sm:p-8 border border-slate-700/70 max-w-md mx-auto mb-8 shadow-inner relative overflow-hidden">
+                <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+                <p class="text-xs text-indigo-300 uppercase tracking-widest font-extrabold mb-1">Skor Akhir Anda</p>
+                <div class="font-heading text-6xl sm:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 my-2" id="final-score">
+                    0
+                </div>
+                <p id="accuracy-text" class="text-xs sm:text-sm text-slate-300 font-medium">Menjawab 0 dari 5 soal dengan benar</p>
+                <p id="time-taken-text" class="text-xs text-slate-500 mt-2"><i class="fa-regular fa-clock mr-1"></i> Waktu Pengerjaan: --:--</p>
+            </div>
+
+            <!-- Evaluation & Detailed Review Section -->
+            <div class="mb-8 text-left">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-heading text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-indigo-400"></i> Pembahasan & Evaluasi Jawaban
+                    </h3>
+                    <span class="text-xs text-slate-400">Klik untuk melihat detail</span>
+                </div>
+                
+                <div id="answer-review-container" class="space-y-3.5 max-h-80 overflow-y-auto pr-2 scrollbar-thin">
+                    <!-- Review items injected dynamically -->
+                </div>
+            </div>
+
+            <!-- Result Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 justify-center pt-2 border-t border-slate-800">
+                <button onclick="resetToWelcome()" class="px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrows-rotate"></i> Ulangi Quiz
+                </button>
+                <button onclick="shareScoreCard()" class="px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-bold text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-share-nodes"></i> Bagikan Hasil
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ADMIN MANAGEMENT DASHBOARD MODAL -->
+    <div id="admin-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl max-w-3xl w-full p-6 sm:p-8 my-8 relative animate-pop">
+            
+            <button onclick="closeAdminModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <!-- ADMIN AUTHENTICATION FORM -->
+            <div id="admin-login-sec">
+                <div class="text-center mb-6">
+                    <div class="w-14 h-14 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/30 flex items-center justify-center mx-auto mb-3">
+                        <i class="fa-solid fa-shield-halved text-2xl"></i>
+                    </div>
+                    <h3 class="font-heading text-xl sm:text-2xl font-bold text-white">Login Admin Dashboard</h3>
+                    <p class="text-xs text-slate-400 mt-1">Masukkan kata sandi admin (Default: <code class="text-indigo-300 font-mono bg-slate-800 px-2 py-0.5 rounded">admin123</code>)</p>
+                </div>
+                <form onsubmit="handleAdminLogin(event)" class="space-y-4 max-w-xs mx-auto">
+                    <div>
+                        <input type="password" id="admin-pass" required placeholder="Kata Sandi Admin..." class="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition-all">
+                        Masuk Admin Panel
+                    </button>
+                </form>
+            </div>
+
+            <!-- ADMIN PANEL CONTENT (AUTHENTICATED) -->
+            <div id="admin-panel-sec" class="hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pb-4 border-b border-slate-800">
+                    <div>
+                        <h3 class="font-heading text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-indigo-400"></i> Manajemen Soal Kuis
+                        </h3>
+                        <p class="text-xs text-slate-400">Kelola bank soal kuis interaktif MTS DDI Kel Baru</p>
+                    </div>
+              
